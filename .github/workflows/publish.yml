@@ -1,48 +1,47 @@
 name: Build and Publish VS Code Extension
 
 on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch: {}
+    push:
+        tags:
+            - "v*"
+    workflow_dispatch: {}
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "18"
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Compile TypeScript
-        run: npm run compile
+            - name: Compile TypeScript
+              run: npm run compile
 
-      - name: Install vsce
-        run: npm install -g vsce
+            - name: Install vsce
+              run: npm install -g vsce
 
-      - name: Package extension (.vsix)
-        run: |
-          vsce package -o uvs-${{ github.sha }}.vsix || true
-        # tolerate failures older vsce or packaging edge cases
+            - name: Package extension (.vsix)
+              run: |
+                  vsce package -o uvs-${{ github.sha }}.vsix || true
+              # tolerate failures older vsce or packaging edge cases
 
-      - name: Upload .vsix artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: uvs-vsix
-          path: '*.vsix'
+            - name: Upload .vsix artifact
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: uvs-vsix
+                  path: "*.vsix"
 
-      - name: Publish to Marketplace (if VSCE_TOKEN is set)
-        if: secrets.VSCE_TOKEN != ''
-        env:
-          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
-        run: |
-          # vsce publish will use the token provided via -p
-          npx vsce publish -p "$VSCE_TOKEN"
+            - name: Publish to Marketplace (if VSCE_TOKEN is set)
+              env:
+                  VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+              run: |
+                  # vsce publish will use the token provided via -p
+                  npx vsce publish -p "$VSCE_TOKEN"
