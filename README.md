@@ -1,4 +1,4 @@
-# UV Sync — VS Code 扩展
+# uvs
 
 自动在打开包含 `pyproject.toml` 的 Python 项目时运行 `uv sync`（或用户配置的命令）。
 
