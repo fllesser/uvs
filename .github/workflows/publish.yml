@@ -36,9 +36,5 @@ jobs:
           name: uvs-vsix
           path: "*.vsix"
 
-      - name: Publish to Marketplace (if VSCE_TOKEN is set)
-        env:
-          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
-        run: |
-          # vsce publish will use the token provided via -p
-          npx vsce publish -p "$VSCE_TOKEN"
+      - name: Publish to Marketplace
+        run: npx vsce publish -p ${{ secrets.VSCE_TOKEN }}
