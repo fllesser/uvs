@@ -2,6 +2,10 @@
     "name": "uvs",
     "displayName": "uv auto sync",
     "description": "Automatically run `uv sync` for Python projects that use uv (pyproject.toml detection).",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/fllesser/uvs"
+    },
     "version": "0.0.1",
     "publisher": "fllesser",
     "engines": {
