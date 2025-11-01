@@ -83,9 +83,12 @@ async function runSyncCommand(showOutput: boolean, command: string, folderUri?: 
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 
+    if (showOutput) {
+        terminal.show(true);
+    }
+
     try {
         terminal.sendText(command, true);
-        terminal.show(true);
     } catch (err) {
         vscode.window.showErrorMessage(`uvs: failed to run command: ${String(err)}`);
         console.error('uvs error', err);
