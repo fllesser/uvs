@@ -28,11 +28,11 @@
         "commands": [
             {
                 "command": "uvs.syncNow",
-                "title": "UV Sync: Sync Now"
+                "title": "uvs: uv sync"
             }
         ],
         "configuration": {
-            "title": "UV Sync",
+            "title": "uvs",
             "properties": {
                 "uvs.command": {
                     "type": "string",
@@ -59,7 +59,7 @@
         }
     },
     "devDependencies": {
-        "typescript": "^4.9.0",
+        "typescript": "^5.9.3",
         "@types/node": "^24.0.0",
         "@types/vscode": "^1.60.0"
     }

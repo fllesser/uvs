@@ -72,36 +72,23 @@ async function runSyncCommand(showOutput: boolean, command: string, folderUri?: 
         return;
     }
 
-    // Remove help flags (-h, --help, -help) if present, then run the cleaned command.
-    // This is more forgiving: users who accidentally configure a help flag will still run the intended command.
-    const helpRemovePattern = /(?:\s|^)(?:-h\b|--help\b|-help\b)(?:\s|$)/g;
-    const cleaned = command.replace(helpRemovePattern, ' ').replace(/\s+/g, ' ').trim();
-    if (!cleaned || cleaned.length === 0) {
-        vscode.window.showWarningMessage('uvs: command only contained help flags and was not executed. Configure a valid command (default: "uv sync").');
-        return;
-    }
-    // Use cleaned command from now on
-    command = cleaned;
-
     if (folderUri) {
         // ensure .python-version exists or create it from pyproject.toml
-        try {
-            await ensurePythonVersion(folderUri);
-        } catch (e) {
-            // continue even if ensuring fails
-        }
+        await ensurePythonVersion(folderUri);
     }
 
     if (!terminal) {
         terminal = vscode.window.createTerminal({ name: 'uvs' });
+        // 等待虚拟环境自动激活
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    if (terminal) {
+        terminal.show(true);
     }
 
     try {
         terminal.sendText(command, true);
-        if (showOutput) {
-            terminal.show(true);
-        }
-        // Keep terminal reference; user can close and it will be recreated next run.
     } catch (err) {
         vscode.window.showErrorMessage(`uvs: failed to run command: ${String(err)}`);
         console.error('uvs error', err);
