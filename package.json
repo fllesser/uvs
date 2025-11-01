@@ -1,0 +1,62 @@
+{
+    "name": "uvs",
+    "displayName": "uv auto sync",
+    "description": "Automatically run `uv sync` for Python projects that use uv (pyproject.toml detection).",
+    "version": "0.0.1",
+    "publisher": "fllesser",
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "workspaceContains:pyproject.toml",
+        "onStartupFinished"
+    ],
+    "main": "./out/extension.js",
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -w -p ./"
+    },
+    "contributes": {
+        "commands": [
+            {
+                "command": "uvs.syncNow",
+                "title": "UV Sync: Sync Now"
+            }
+        ],
+        "configuration": {
+            "title": "UV Sync",
+            "properties": {
+                "uvs.command": {
+                    "type": "string",
+                    "default": "uv sync",
+                    "description": "Command to run for syncing (default: 'uv sync')."
+                },
+                "uvs.autoEnable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically run the sync command when a Python project (pyproject.toml) is opened."
+                },
+                "uvs.delaySeconds": {
+                    "type": "number",
+                    "default": 2,
+                    "minimum": 0,
+                    "description": "Seconds to wait after activation before running the sync command."
+                },
+                "uvs.showOutput": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show the integrated terminal when running the sync command. If false the command runs in background terminal."
+                }
+            }
+        }
+    },
+    "devDependencies": {
+        "typescript": "^4.9.0",
+        "@types/node": "^16.11.7",
+        "@types/vscode": "^1.60.0"
+    }
+}

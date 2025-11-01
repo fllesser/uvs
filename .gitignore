@@ -1,0 +1,17 @@
+node_modules/
+out/
+.vscode/
+.DS_Store
+*.vsix
+dist/
+.env
+.python-version
+/.pnp
+/.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+/.idea/
+coverage/
+/.cache/
