@@ -83,10 +83,6 @@ async function runSyncCommand(showOutput: boolean, command: string, folderUri?: 
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    // if (terminal) {
-    //     terminal.show(true);
-    // }
-
     try {
         terminal.sendText(command, true);
         terminal.show(true);
