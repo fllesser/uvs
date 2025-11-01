@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
 
-let terminal: vscode.Terminal | undefined;
-
 async function ensurePythonVersion(folderUri: vscode.Uri | undefined): Promise<void> {
     if (!folderUri) {
         return;
@@ -77,22 +75,26 @@ async function runSyncCommand(showOutput: boolean, command: string, folderUri?: 
         await ensurePythonVersion(folderUri);
     }
 
+    let terminal = vscode.window.terminals.find(t => t.name === 'uvs');
+
     if (!terminal) {
         terminal = vscode.window.createTerminal({ name: 'uvs' });
         // 等待虚拟环境自动激活
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    if (terminal) {
-        terminal.show(true);
-    }
+    // if (terminal) {
+    //     terminal.show(true);
+    // }
 
     try {
         terminal.sendText(command, true);
+        terminal.show(true);
     } catch (err) {
         vscode.window.showErrorMessage(`uvs: failed to run command: ${String(err)}`);
         console.error('uvs error', err);
     }
+
 }
 
 export function activate(context: vscode.ExtensionContext) {
