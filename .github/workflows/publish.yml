@@ -16,25 +16,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: 24
 
-      - name: Compile TypeScript
-        run: npm install && npm run compile
-
-      - name: Install vsce
-        run: npm install -g vsce
-
-      - name: Package extension (.vsix)
-        run: |
-          vsce package -o uvs-${{ github.sha }}.vsix || true
-        # tolerate failures older vsce or packaging edge cases
-
-      - name: Upload .vsix artifact
-        if: always()
-        uses: actions/upload-artifact@v5
+      - run: npm ci
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v2
         with:
-          name: uvs-vsix
-          path: "*.vsix"
-
-      - name: Publish to Marketplace
-        run: npx vsce publish -p ${{ secrets.VSCE_TOKEN }}
+          pat: ${{ secrets.VSCE_TOKEN }}
+          registryUrl: https://marketplace.visualstudio.com
