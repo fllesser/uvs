@@ -1,17 +1,17 @@
 import * as vscode from 'vscode';
 
-async function ensurePythonVersion(folderUri: vscode.Uri | undefined): Promise<void> {
+async function detectMinPythonVersion(folderUri: vscode.Uri | undefined): Promise<string | null> {
     if (!folderUri) {
-        return;
+        return null;
     }
 
     const pyverUri = vscode.Uri.joinPath(folderUri, '.python-version');
     try {
         await vscode.workspace.fs.stat(pyverUri);
-        // file exists, nothing to do
-        return;
+        // .python-version exists, no need to detect
+        return null;
     } catch (e) {
-        // not exists, continue to try creating from pyproject.toml
+        // not exists, continue to detect from pyproject.toml
     }
 
     const pyprojectUri = vscode.Uri.joinPath(folderUri, 'pyproject.toml');
@@ -21,7 +21,7 @@ async function ensurePythonVersion(folderUri: vscode.Uri | undefined): Promise<v
         content = new TextDecoder().decode(data);
     } catch (e) {
         // no pyproject.toml found or can't read it
-        return;
+        return null;
     }
 
     // Try to extract project.requires-python value
@@ -29,7 +29,7 @@ async function ensurePythonVersion(folderUri: vscode.Uri | undefined): Promise<v
     const reqMatch = content.match(/requires-python\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\n#]+))/i);
     const spec = reqMatch ? (reqMatch[1] || reqMatch[2] || reqMatch[3] || '').trim() : '';
     if (!spec) {
-        return;
+        return null;
     }
 
     // Determine minimal version from the spec string.
@@ -41,17 +41,7 @@ async function ensurePythonVersion(folderUri: vscode.Uri | undefined): Promise<v
         minVersion = geMatch[1];
     }
 
-    if (!minVersion) {
-        return;
-    }
-
-    try {
-        const encoder = new TextEncoder();
-        await vscode.workspace.fs.writeFile(pyverUri, encoder.encode(minVersion + '\n'));
-        vscode.window.showInformationMessage(`.python-version created with minimum Python ${minVersion}`);
-    } catch (e) {
-        // ignore write errors
-    }
+    return minVersion;
 }
 
 function getConfig() {
@@ -70,9 +60,14 @@ async function runSyncCommand(showOutput: boolean, command: string, folderUri?: 
         return;
     }
 
+    let finalCommand = command;
     if (folderUri) {
-        // ensure .python-version exists or create it from pyproject.toml
-        await ensurePythonVersion(folderUri);
+        // detect minimum Python version if .python-version doesn't exist
+        const minVersion = await detectMinPythonVersion(folderUri);
+        if (minVersion) {
+            // add -p minVersion to command if .python-version doesn't exist
+            finalCommand = `${command} -p ${minVersion}`;
+        }
     }
 
     let terminal = vscode.window.terminals.find(t => t.name === 'uvs');
@@ -88,7 +83,7 @@ async function runSyncCommand(showOutput: boolean, command: string, folderUri?: 
     }
 
     try {
-        terminal.sendText(command, true);
+        terminal.sendText(finalCommand, true);
     } catch (err) {
         vscode.window.showErrorMessage(`uvs: failed to run command: ${String(err)}`);
         console.error('uvs error', err);
