@@ -22,7 +22,9 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
-        "watch": "tsc -w -p ./"
+        "watch": "tsc -w -p ./",
+        "code-install": "npm run compile && npx vsce package --out uvs.vsix && code --install-extension uvs.vsix",
+        "ant-install": "npm run compile && npx vsce package --out uvs.vsix && Antigravity --install-extension uvs.vsix"
     },
     "contributes": {
         "commands": [
@@ -49,18 +51,13 @@
                     "default": 2,
                     "minimum": 0,
                     "description": "Seconds to wait after activation before running the sync command."
-                },
-                "uvs.showOutput": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Show the integrated terminal when running the sync command. If false the command runs in background terminal."
                 }
             }
         }
     },
     "devDependencies": {
         "typescript": "^5.9.3",
-        "@types/node": "^24.0.0",
-        "@types/vscode": "^1.60.0"
+        "@types/node": "^24.10.0",
+        "@types/vscode": "^1.75.0"
     }
 }

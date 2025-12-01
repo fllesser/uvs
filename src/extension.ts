@@ -1,4 +1,11 @@
 import * as vscode from 'vscode';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+// Create output channel for displaying command output
+let outputChannel: vscode.OutputChannel;
 
 async function detectMinPythonVersion(folderUri: vscode.Uri | undefined): Promise<string | null> {
     if (!folderUri) {
@@ -26,7 +33,7 @@ async function detectMinPythonVersion(folderUri: vscode.Uri | undefined): Promis
 
     // Try to extract project.requires-python value
     // Look for requires-python = "..." (in [project] section or anywhere)
-    const reqMatch = content.match(/requires-python\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\n#]+))/i);
+    const reqMatch = content.match(/requires-python\s*=\s*(?:"([^"]+)|'([^']+)'|([^\n#]+))/i);
     const spec = reqMatch ? (reqMatch[1] || reqMatch[2] || reqMatch[3] || '').trim() : '';
     if (!spec) {
         return null;
@@ -49,12 +56,11 @@ function getConfig() {
     return {
         command: cfg.get<string>('command', 'uv sync'),
         autoEnable: cfg.get<boolean>('autoEnable', true),
-        delaySeconds: cfg.get<number>('delaySeconds', 2),
-        showOutput: cfg.get<boolean>('showOutput', true)
+        delaySeconds: cfg.get<number>('delaySeconds', 2)
     };
 }
 
-async function runSyncCommand(showOutput: boolean, command: string, folderUri?: vscode.Uri) {
+async function runSyncCommand(command: string, folderUri?: vscode.Uri) {
     if (!command || command.trim().length === 0) {
         vscode.window.showErrorMessage('uvs: no command configured');
         return;
@@ -70,28 +76,58 @@ async function runSyncCommand(showOutput: boolean, command: string, folderUri?: 
         }
     }
 
-    let terminal = vscode.window.terminals.find(t => t.name === 'uvs');
+    const cwd = folderUri ? folderUri.fsPath : undefined;
 
-    if (!terminal) {
-        terminal = vscode.window.createTerminal({ name: 'uvs' });
-        // 等待虚拟环境自动激活
-        await new Promise(resolve => setTimeout(resolve, 500));
+    // Log to output channel
+    outputChannel.appendLine('='.repeat(60));
+    outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] Running: ${finalCommand}`);
+    if (cwd) {
+        outputChannel.appendLine(`Working directory: ${cwd}`);
     }
-
-    if (showOutput) {
-        terminal.show(true);
-    }
+    outputChannel.appendLine('='.repeat(60));
 
     try {
-        terminal.sendText(finalCommand, true);
-    } catch (err) {
-        vscode.window.showErrorMessage(`uvs: failed to run command: ${String(err)}`);
+        vscode.window.showInformationMessage(`uvs: Running ${finalCommand}`);
+        const { stdout, stderr } = await execAsync(finalCommand, { cwd });
+        
+        // Write stdout to output channel
+        if (stdout && stdout.trim().length > 0) {
+            outputChannel.appendLine(stdout);
+        }
+        
+        // Write stderr to output channel (uv might output to stderr even on success)
+        if (stderr && stderr.trim().length > 0) {
+            outputChannel.appendLine(stderr);
+        }
+        
+        outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] ✓ Sync completed successfully`);
+        vscode.window.showInformationMessage('uvs: Sync completed successfully');
+    } catch (err: any) {
+        const errorMsg = err.message || String(err);
+        
+        // Log error details to output channel
+        outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] ✗ Sync failed`);
+        outputChannel.appendLine(`Error: ${errorMsg}`);
+        if (err.stdout) {
+            outputChannel.appendLine('--- stdout ---');
+            outputChannel.appendLine(err.stdout);
+        }
+        if (err.stderr) {
+            outputChannel.appendLine('--- stderr ---');
+            outputChannel.appendLine(err.stderr);
+        }
+        
+        vscode.window.showErrorMessage(`uvs: Sync failed - ${errorMsg}`);
         console.error('uvs error', err);
     }
 
 }
 
 export function activate(context: vscode.ExtensionContext) {
+    // Initialize output channel
+    outputChannel = vscode.window.createOutputChannel('uvs');
+    context.subscriptions.push(outputChannel);
+
     const cfg = getConfig();
 
     const disposable = vscode.commands.registerCommand('uvs.syncNow', async () => {
@@ -100,7 +136,7 @@ export function activate(context: vscode.ExtensionContext) {
         const folderUri = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
             ? vscode.workspace.workspaceFolders[0].uri
             : undefined;
-        await runSyncCommand(c.showOutput, c.command, folderUri);
+        await runSyncCommand(c.command, folderUri);
     });
     context.subscriptions.push(disposable);
 
@@ -128,14 +164,10 @@ export function activate(context: vscode.ExtensionContext) {
 
             if (found && foundFolderUri) {
                 // run in the folder where pyproject.toml was found
-                await runSyncCommand(cfg.showOutput, cfg.command, foundFolderUri);
+                await runSyncCommand(cfg.command, foundFolderUri);
             } else {
                 // If extension was activated by onStartupFinished and not workspaceContains, be quiet.
             }
         }, delay);
     }
-}
-
-export function deactivate() {
-    // do not dispose terminal so user can see previous output; let VS Code handle it
 }
