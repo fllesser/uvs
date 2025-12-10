@@ -7,18 +7,23 @@ const execAsync = promisify(exec);
 // Create output channel for displaying command output
 let outputChannel: vscode.OutputChannel;
 
+async function fileExists(uri: vscode.Uri): Promise<boolean> {
+    try {
+        await vscode.workspace.fs.stat(uri);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 async function detectMinPythonVersion(folderUri: vscode.Uri | undefined): Promise<string | null> {
     if (!folderUri) {
         return null;
     }
 
     const pyverUri = vscode.Uri.joinPath(folderUri, '.python-version');
-    try {
-        await vscode.workspace.fs.stat(pyverUri);
-        // .python-version exists, no need to detect
+    if (await fileExists(pyverUri)) {
         return null;
-    } catch (e) {
-        // not exists, continue to detect from pyproject.toml
     }
 
     const pyprojectUri = vscode.Uri.joinPath(folderUri, 'pyproject.toml');
@@ -54,7 +59,7 @@ async function detectMinPythonVersion(folderUri: vscode.Uri | undefined): Promis
 function getConfig() {
     const cfg = vscode.workspace.getConfiguration('uvs');
     return {
-        command: cfg.get<string>('command', 'uv sync'),
+        command: cfg.get<string>('command', 'uv sync --frozen'),
         autoEnable: cfg.get<boolean>('autoEnable', true),
         delaySeconds: cfg.get<number>('delaySeconds', 2)
     };
@@ -89,22 +94,22 @@ async function runSyncCommand(command: string, folderUri?: vscode.Uri) {
     try {
         vscode.window.showInformationMessage(`uvs: Running ${finalCommand}`);
         const { stdout, stderr } = await execAsync(finalCommand, { cwd });
-        
+
         // Write stdout to output channel
         if (stdout && stdout.trim().length > 0) {
             outputChannel.appendLine(stdout);
         }
-        
+
         // Write stderr to output channel (uv might output to stderr even on success)
         if (stderr && stderr.trim().length > 0) {
             outputChannel.appendLine(stderr);
         }
-        
+
         outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] ✓ Sync completed successfully`);
         vscode.window.showInformationMessage('uvs: Sync completed successfully');
     } catch (err: any) {
         const errorMsg = err.message || String(err);
-        
+
         // Log error details to output channel
         outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] ✗ Sync failed`);
         outputChannel.appendLine(`Error: ${errorMsg}`);
@@ -116,7 +121,7 @@ async function runSyncCommand(command: string, folderUri?: vscode.Uri) {
             outputChannel.appendLine('--- stderr ---');
             outputChannel.appendLine(err.stderr);
         }
-        
+
         vscode.window.showErrorMessage(`uvs: Sync failed - ${errorMsg}`);
         console.error('uvs error', err);
     }
@@ -150,14 +155,12 @@ export function activate(context: vscode.ExtensionContext) {
             let foundFolderUri: vscode.Uri | undefined;
             if (folders) {
                 for (const folder of folders) {
-                    try {
-                        const uri = vscode.Uri.joinPath(folder.uri, 'pyproject.toml');
-                        await vscode.workspace.fs.stat(uri);
+                    const uri = vscode.Uri.joinPath(folder.uri, 'pyproject.toml');
+                    const lockUri = vscode.Uri.joinPath(folder.uri, 'uv.lock');
+                    if (await fileExists(uri) && await fileExists(lockUri)) {
                         found = true;
                         foundFolderUri = folder.uri;
                         break;
-                    } catch (e) {
-                        // not found in this folder
                     }
                 }
             }

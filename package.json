@@ -1,63 +1,64 @@
 {
-    "name": "uvs",
-    "displayName": "uv auto sync",
-    "description": "Automatically run `uv sync` for Python projects that use uv (pyproject.toml detection).",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/fllesser/uvs"
-    },
-    "version": "0.0.1",
-    "publisher": "fllesser",
-    "engines": {
-        "vscode": "^1.75.0"
-    },
-    "categories": [
-        "Other"
+  "name": "uvs",
+  "displayName": "uv auto sync",
+  "description": "Automatically run `uv sync` for Python projects that use uv (pyproject.toml detection).",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fllesser/uvs"
+  },
+  "version": "0.0.1",
+  "publisher": "fllesser",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:pyproject.toml",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "code-install": "npm run compile && npx vsce package --out uvs.vsix && code --install-extension uvs.vsix",
+    "ant-install": "npm run compile && npx vsce package --out uvs.vsix && Antigravity --install-extension uvs.vsix",
+    "all-install": "npm run compile && npx vsce package --out uvs.vsix && code --install-extension uvs.vsix && Antigravity --install-extension uvs.vsix"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "uvs.syncNow",
+        "title": "uvs: uv sync"
+      }
     ],
-    "activationEvents": [
-        "workspaceContains:pyproject.toml",
-        "onStartupFinished"
-    ],
-    "main": "./out/extension.js",
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -w -p ./",
-        "code-install": "npm run compile && npx vsce package --out uvs.vsix && code --install-extension uvs.vsix",
-        "ant-install": "npm run compile && npx vsce package --out uvs.vsix && Antigravity --install-extension uvs.vsix"
-    },
-    "contributes": {
-        "commands": [
-            {
-                "command": "uvs.syncNow",
-                "title": "uvs: uv sync"
-            }
-        ],
-        "configuration": {
-            "title": "uvs",
-            "properties": {
-                "uvs.command": {
-                    "type": "string",
-                    "default": "uv sync",
-                    "description": "Command to run for syncing (default: 'uv sync')."
-                },
-                "uvs.autoEnable": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Automatically run the sync command when a Python project (pyproject.toml) is opened."
-                },
-                "uvs.delaySeconds": {
-                    "type": "number",
-                    "default": 2,
-                    "minimum": 0,
-                    "description": "Seconds to wait after activation before running the sync command."
-                }
-            }
+    "configuration": {
+      "title": "uvs",
+      "properties": {
+        "uvs.command": {
+          "type": "string",
+          "default": "uv sync",
+          "description": "Command to run for syncing (default: 'uv sync')."
+        },
+        "uvs.autoEnable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically run the sync command when a Python project (pyproject.toml) is opened."
+        },
+        "uvs.delaySeconds": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "description": "Seconds to wait after activation before running the sync command."
         }
-    },
-    "devDependencies": {
-        "typescript": "^5.9.3",
-        "@types/node": "^24.10.0",
-        "@types/vscode": "^1.75.0"
+      }
     }
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^24.10.0",
+    "@types/vscode": "^1.75.0"
+  }
 }
