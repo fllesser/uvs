@@ -6,7 +6,7 @@
     "type": "git",
     "url": "https://github.com/fllesser/uvs"
   },
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "fllesser",
   "engines": {
     "vscode": "^1.75.0"
@@ -39,7 +39,7 @@
       "properties": {
         "uvs.command": {
           "type": "string",
-          "default": "uv sync",
+          "default": "uv sync --frozen",
           "description": "Command to run for syncing (default: 'uv sync')."
         },
         "uvs.autoEnable": {
